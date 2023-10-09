@@ -1,1 +1,2 @@
 E:\University\Semester 3\COAL\Projects\Simple Calculator\Project32_VS2022\Debug\Project.exe
+E:\University\Semester 3\COAL\Projects\Simple Calculator\Debug\Project.exe

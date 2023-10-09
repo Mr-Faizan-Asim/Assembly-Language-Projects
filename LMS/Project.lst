@@ -1,9 +1,8 @@
-Microsoft (R) Macro Assembler Version 14.37.32822.0	    10/09/23 09:13:44
-SimpleCalculator.asm					     Page 1 - 1
+Microsoft (R) Macro Assembler Version 14.37.32822.0	    10/09/23 14:42:07
+AddTwo.asm						     Page 1 - 1
 
 
-
-				Include Irvine32.inc
+				include Irvine32.inc
 			      C ; Include file for Irvine32.lib             (Irvine32.inc)
 			      C 
 			      C ;OPTION CASEMAP:NONE		; optional: make identifiers case-sensitive
@@ -23,122 +22,184 @@ SimpleCalculator.asm					     Page 1 - 1
 			      C 
 				.386
 				.model flat,stdcall
-SimpleCalculator.asm(4) : warning A4011:multiple .MODEL directives found : .MODEL ignored
+AddTwo.asm(3) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				.stack 4096
 				ExitProcess proto,dwExitCode:dword
+
  00000000			.data
- 00000000 45 6E 74 65 72		prompt1 db "Enter First Number: ", 0
-	   20 46 69 72 73
-	   74 20 4E 75 6D
-	   62 65 72 3A 20
-	   00
- 00000015 45 6E 74 65 72		prompt2 db "Enter Second Number: ", 0
-	   20 53 65 63 6F
-	   6E 64 20 4E 75
-	   6D 62 65 72 3A
+				    ; Operation Performer
+ 00000000 00			    oper db ?
+				    ; Define the header
+ 00000001 23 23 23 23 23	    headerArray db "##############",0
+	   23 23 23 23 23
+	   23 23 23 23 00
+ 00000010  23 20 20 20 20	                db "#            #",0
+	   20 20 20 20 20
+	   20 20 20 23 00
+ 0000001F  23 20 20 20 20	                db "#     LMS    #",0
+	   20 4C 4D 53 20
+	   20 20 20 23 00
+ 0000002E  23 20 20 20 20	                db "#            #",0
+	   20 20 20 20 20
+	   20 20 20 23 00
+ 0000003D  23 23 23 23 23	                db "##############",0
+	   23 23 23 23 23
+	   23 23 23 23 00
+ 0000004C 00000005		    headerSize dd 5             ; Number of strings in the array
+
+				    ; Define the menu
+ 00000050 31 2E 20 41 44	    menuArray db "1. ADD BOOK",0
+	   44 20 42 4F 4F
+	   4B 00
+ 0000005C  32 2E 20 44 45	              db "2. DEL BOOK",0
+	   4C 20 42 4F 4F
+	   4B 00
+ 00000068  33 2E 20 55 50	              db "3. UPD BOOK",0
+	   44 20 42 4F 4F
+	   4B 00
+ 00000074  34 2E 20 50 52	              db "4. PRI BOOK",0
+	   49 20 42 4F 4F
+	   4B 00
+ 00000080  35 2E 20 4E 41	              db "5. NAM BOOK",0
+	   4D 20 42 4F 4F
+	   4B 00
+ 0000008C 00000005		    menuSize dd 5               ; Number of strings in the menu
+ 00000090 43 48 4F 53 45	    menuMessage db "CHOSE ONE: ",0
+	   20 4F 4E 45 3A
 	   20 00
- 0000002B 45 6E 74 65 72		prompt3 db "Enter the Operation as(a,x,d,m): ",0
-	   20 74 68 65 20
-	   4F 70 65 72 61
-	   74 69 6F 6E 20
-	   61 73 28 61 2C
-	   78 2C 64 2C 6D
-	   29 3A 20 00
- 0000004D 52 65 73 75 6C		resultMessage db "Result is: ", 0
-	   74 20 69 73 3A
+				    ; Books Variable
+ 0000009C 42 4F 4F 4B 20	    prompt1 db "BOOK NAME: ",0
+	   4E 41 4D 45 3A
 	   20 00
- 00000059 00000000			num1 dd ?
- 0000005D 00000000			num2 dd ?
- 00000061 00				operation db ? 
- 00000062 00000000			result dd ?
+ 000000A8 42 4F 4F 4B 20	    prompt2 db "BOOK ID: ",0
+	   49 44 3A 20 00
+ 000000B2 42 4F 4F 4B 20	    prompt3 db "BOOK PRICE: ",0
+	   50 52 49 43 45
+	   3A 20 00
+ 000000BF  00000064 [		    BookName db 100 dup (?) 
+	    00
+	   ]
+ 00000123  00002710 [		    Bookid db 100*100 dup (?) 
+	    00
+	   ]
+ 00002833  00002710 [		    BookPrice db 100*100 dup (?)
+	    00
+	   ]
+ 00004F43 00000000		    BookCounter dd 0
+				    ; temp thing
+ 00004F47 00			    temp db ?
+
+
  00000000			.code
- 00000000			main proc
-					; 1st number take
- 00000000  BA 00000000 R		mov edx, offset prompt1
- 00000005  E8 00000000 E		call writestring
- 0000000A  E8 00000000 E		call readint
- 0000000F  A3 00000059 R		mov num1,eax
+				; header Function
+ 00000000			header proc
+ 00000000  8B 0D 0000004C R	    mov ecx, [headerSize]
+ 00000006  BE 00000000		    mov esi, 0 
+ 0000000B			print_loop:
+ 0000000B  8D 96 00000001 R	    lea edx, [headerArray + esi]
+ 00000011  E8 00000000 E	    call writestring
+ 00000016  E8 00000000 E	    call crlf
 
-					; 2nd number take
- 00000014  BA 00000015 R		mov edx, offset prompt2
- 00000019  E8 00000000 E		call writestring
- 0000001E  E8 00000000 E		call readint
- 00000023  A3 0000005D R		mov num2,eax
+ 0000001B  83 C6 0F		    add esi, 15
 
-					; taking operations
- 00000028  BA 0000002B R		mov edx, offset prompt3
- 0000002D  E8 00000000 E		call writestring
- 00000032  E8 00000000 E		call readchar
- 00000037  A2 00000061 R		mov operation,al
+ 0000001E  E2 EB		    loop print_loop
 
- 0000003C  E8 00000000 E		call crlf
+ 00000020  C3			    ret
+ 00000021			header endp
 
- 00000041  80 3D 00000061 R		cmp operation,'a'
-	   61
- 00000048  74 22			je performAdd
+ 00000021			menuPrinter proc
+ 00000021  8B 0D 0000008C R	    mov ecx, [menuSize]
+ 00000027  BE 00000000		    mov esi, 0
+ 0000002C			menu_loop:
+ 0000002C  8D 96 00000050 R	    lea edx, [menuArray + esi]
+ 00000032  E8 00000000 E	    call writestring
+ 00000037  E8 00000000 E	    call crlf
 
- 0000004A  80 3D 00000061 R		cmp operation,'x'
-	   78
- 00000051  74 2B			je performMul
+ 0000003C  83 C6 0C		    add esi, 12
 
- 00000053  80 3D 00000061 R		cmp operation,'d'
-	   64
- 0000005A  74 47			je performDiv
+ 0000003F  E2 EB		    loop menu_loop
 
- 0000005C  80 3D 00000061 R		cmp operation,'m'
-	   6D
- 00000063  74 2C			je performSub
+ 00000041  BA 00000090 R	     mov edx, offset menuMessage
+ 00000046  E8 00000000 E	     call writestring
+ 0000004B  E8 00000000 E	     call readchar
+ 00000050  E8 00000000 E	     call crlf    
+ 00000055  C3			     ret
+ 00000056			menuPrinter endp
 
 
-					invoke ExitProcess,0
- 00000065  6A 00	   *	    push   +000000000h
- 00000067  E8 00000000 E   *	    call   ExitProcess
+ 00000056			addBook proc
+				 
 
- 0000006C			performAdd:
- 0000006C  A1 00000059 R		mov eax,num1
- 00000071  03 05 0000005D R		add eax,num2
- 00000077  A3 00000062 R		mov result,eax
- 0000007C  EB 38			jmp displayAnswer
+				    ; Read the book name
+ 00000056  BB 000000BF R	    mov ebx, offset BookName
+ 0000005B  BF 00004F43 R	    mov edi, offset BookCounter
+ 00000060  8B F3		    mov esi, ebx
+ 00000062  03 37		    add esi, [edi]
+ 00000064  E8 00000000 E	    call readString
+ 00000069  8B 06		    mov eax,[esi]
+ 0000006B  E8 00000000 E	    call writeint
 
- 0000007E			performMul:
- 0000007E  A1 00000059 R		mov eax,num1
- 00000083  0F AF 05			imul eax,num2
-	   0000005D R
- 0000008A  A3 00000062 R		mov result,eax
- 0000008F  EB 25			jmp displayAnswer
+				   
+				    ; Increment the book counter
+ 00000070  83 05 00004F43 R	    add BookCounter,1
+	   01
 
- 00000091			performSub:
- 00000091  A1 00000059 R		mov eax,num1
- 00000096  2B 05 0000005D R		sub eax,num2
- 0000009C  A3 00000062 R		mov result,eax
- 000000A1  EB 13			jmp displayAnswer
+ 00000077  C3			    ret
 
- 000000A3			performDiv:
- 000000A3  A1 00000059 R		mov eax,num1
- 000000A8  99				cdq ; it exten eax to edx : eax
- 000000A9  F7 3D 0000005D R		idiv num2
- 000000AF  A3 00000062 R		mov result,eax
- 000000B4  EB 00			jmp displayAnswer
+ 00000078			book_limit_reached:
+				    ; Handle the case where the maximum book limit is reached
+ 00000078  BA 00000088 R	    mov edx, offset max_book_limit_message
+ 0000007D  E8 00000000 E	    call writestring
+ 00000082  E8 00000000 E	    call crlf
+ 00000087  C3			    ret
 
-
- 000000B6			displayAnswer:
- 000000B6  BA 0000004D R		mov edx , offset resultMessage
- 000000BB  E8 00000000 E		call writestring
- 000000C0  A1 00000062 R		mov eax, result
- 000000C5  E8 00000000 E		call writeint
-
- 000000CA  E8 00000000 E		call crlf
-
- 000000CF  E8 00000000 E		call waitmsg
-					invoke ExitProcess, 0    ; Exit the program
- 000000D4  6A 00	   *	    push   +000000000h
- 000000D6  E8 00000000 E   *	    call   ExitProcess
+ 00000088 4D 61 78 69 6D	max_book_limit_message db "Maximum book limit reached.", 0
+	   75 6D 20 62 6F
+	   6F 6B 20 6C 69
+	   6D 69 74 20 72
+	   65 61 63 68 65
+	   64 2E 00
+ 000000A4			addBook endp
 
 
- 000000DB			main endp
+ 000000A4			main proc
+ 000000A4			start:
+ 000000A4  E8 00000000 E	    call waitmsg
+ 000000A9  E8 00000000 E	    call Clrscr
+ 000000AE  E8 FFFFFF4D		    call header
+ 000000B3  E8 FFFFFF69		    call menuPrinter
+ 000000B8  A2 00000000 R	    mov oper,al
+
+ 000000BD  80 3D 00000000 R	    cmp oper,'1'
+	   31
+ 000000C4  74 00		    je PerformAdd
+
+ 000000C6			PerformAdd:
+ 000000C6  E8 FFFFFF8B		    call addBook
+ 000000CB  A1 00004F43 R	    mov eax,[BookCounter]
+ 000000D0  E8 00000000 E	    call Writeint
+ 000000D5  EB CD		    jmp start
+
+				;PerformDel:
+				    
+
+				;PerformUpd:
+
+
+				;PerformPri:
+
+
+				;PerformName:
+
+
+				    invoke ExitProcess, 0
+ 000000D7  6A 00	   *	    push   +000000000h
+ 000000D9  E8 00000000 E   *	    call   ExitProcess
+ 000000DE			main endp
+
 				end main
-Microsoft (R) Macro Assembler Version 14.37.32822.0	    10/09/23 09:13:44
-SimpleCalculator.asm					     Symbols 2 - 1
+Microsoft (R) Macro Assembler Version 14.37.32822.0	    10/09/23 14:42:07
+AddTwo.asm						     Symbols 2 - 1
 
 
 
@@ -231,8 +292,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 00000066 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000000DB Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 00004F48 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000000DE Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -339,12 +400,15 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000000DB Public STDCALL
-  performAdd . . . . . . . . . .	L Near	 0000006C _TEXT	
-  performMul . . . . . . . . . .	L Near	 0000007E _TEXT	
-  performSub . . . . . . . . . .	L Near	 00000091 _TEXT	
-  performDiv . . . . . . . . . .	L Near	 000000A3 _TEXT	
-  displayAnswer  . . . . . . . .	L Near	 000000B6 _TEXT	
+addBook  . . . . . . . . . . . .	P Near	 00000056 _TEXT	Length= 0000004E Public STDCALL
+  book_limit_reached . . . . . .	L Near	 00000078 _TEXT	
+header . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000021 Public STDCALL
+  print_loop . . . . . . . . . .	L Near	 0000000B _TEXT	
+main . . . . . . . . . . . . . .	P Near	 000000A4 _TEXT	Length= 0000003A Public STDCALL
+  start  . . . . . . . . . . . .	L Near	 000000A4 _TEXT	
+  PerformAdd . . . . . . . . . .	L Near	 000000C6 _TEXT	
+menuPrinter  . . . . . . . . . .	P Near	 00000021 _TEXT	Length= 00000035 Public STDCALL
+  menu_loop  . . . . . . . . . .	L Near	 0000002C _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -364,6 +428,10 @@ Symbols:
 @fardata . . . . . . . . . . . .	Text   	 FLAT
 @stack . . . . . . . . . . . . .	Text   	 FLAT
 ALT_MASK . . . . . . . . . . . .	Number	 00000003h   
+BookCounter  . . . . . . . . . .	DWord	 00004F43 _DATA	
+BookName . . . . . . . . . . . .	Byte	 000000BF _DATA	
+BookPrice  . . . . . . . . . . .	Byte	 00002833 _DATA	
+Bookid . . . . . . . . . . . . .	Byte	 00000123 _DATA	
 CAPSLOCK_ON  . . . . . . . . . .	Number	 00000080h   
 CREATE_ALWAYS  . . . . . . . . .	Number	 00000002h   
 CREATE_NEW . . . . . . . . . . .	Number	 00000001h   
@@ -570,6 +638,8 @@ cyan . . . . . . . . . . . . . .	Number	 00000003h
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
+headerArray  . . . . . . . . . .	Byte	 00000001 _DATA	
+headerSize . . . . . . . . . . .	DWord	 0000004C _DATA	
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
 lightCyan  . . . . . . . . . . .	Number	 0000000Bh   
 lightGray  . . . . . . . . . . .	Number	 00000007h   
@@ -577,15 +647,16 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
-num1 . . . . . . . . . . . . . .	DWord	 00000059 _DATA	
-num2 . . . . . . . . . . . . . .	DWord	 0000005D _DATA	
-operation  . . . . . . . . . . .	Byte	 00000061 _DATA	
-prompt1  . . . . . . . . . . . .	Byte	 00000000 _DATA	
-prompt2  . . . . . . . . . . . .	Byte	 00000015 _DATA	
-prompt3  . . . . . . . . . . . .	Byte	 0000002B _DATA	
+max_book_limit_message . . . . .	Byte	 00000088 _TEXT	
+menuArray  . . . . . . . . . . .	Byte	 00000050 _DATA	
+menuMessage  . . . . . . . . . .	Byte	 00000090 _DATA	
+menuSize . . . . . . . . . . . .	DWord	 0000008C _DATA	
+oper . . . . . . . . . . . . . .	Byte	 00000000 _DATA	
+prompt1  . . . . . . . . . . . .	Byte	 0000009C _DATA	
+prompt2  . . . . . . . . . . . .	Byte	 000000A8 _DATA	
+prompt3  . . . . . . . . . . . .	Byte	 000000B2 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
-resultMessage  . . . . . . . . .	Byte	 0000004D _DATA	
-result . . . . . . . . . . . . .	DWord	 00000062 _DATA	
+temp . . . . . . . . . . . . . .	Byte	 00004F47 _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
